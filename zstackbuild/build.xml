@@ -55,6 +55,7 @@
     <import file="${basedir}/projects/zstack-war.xml" optional="false" />
     <import file="${basedir}/projects/zstacklib.xml" optional="false" />
     <import file="${basedir}/projects/zstack-kvmagent.xml" optional="false" />
+    <import file="${basedir}/projects/zstack-xenagent.xml" optional="false" />
     <import file="${basedir}/projects/zstack-virtualrouter.xml" optional="false" />
     <import file="${basedir}/projects/zstack-appliancevm.xml" optional="false" />
     <import file="${basedir}/projects/zstack-sftpbackupstorage.xml" optional="false" />
@@ -197,6 +198,10 @@
                 <antcall target="build-kvmagent"/>
             </sequential>
             <sequential>
+                <antcall target="build-xenagent"/>
+            </sequential>
+
+            <sequential>
                 <antcall target="build-sftpbackupstorage"/>
             </sequential>
             <sequential>
@@ -251,6 +256,9 @@
             </sequential>
             <sequential>
                 <antcall target="assemble-kvmagent"/>
+            </sequential>
+            <sequential>
+                <antcall target="assemble-xenagent"/>
             </sequential>
             <sequential>
                 <antcall target="assemble-sftpbackupstorage"/>
