@@ -72,14 +72,17 @@ class KvmRESTService(object):
         return None if not self.config.has_key(name) else self.config[name]
     
     def start(self, in_thread=True):
+        logger.warn('Starting HttpServer--------------------------')
         config = {}
         self.plugin_rgty.configure_plugins(config)
         self.plugin_rgty.start_plugins()
         if in_thread:
             self.http_server.start_in_thread()
+            logger.warn('Starting HttpServer---------------OVER-----------')
         else:
             self.http_server.start()
-    
+            logger.warn('Starting HttpServer--------------------------')
+
     def stop(self):
         self.plugin_rgty.stop_plugins()
         self.http_server.stop()

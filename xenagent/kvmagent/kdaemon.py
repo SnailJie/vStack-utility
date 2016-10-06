@@ -7,8 +7,8 @@ from zstacklib.utils import log
 from zstacklib.utils import linux
 import zstacklib.utils.iptables as iptables
 
-pidfile = '/var/run/zstack/kvmagent.pid'
-log.configure_log('/var/log/zstack/zstack-kvmagent.log')
+pidfile = '/var/run/zstack/xenagent.pid'
+log.configure_log('/var/log/zstack/zstack-xenagent.log')
 logger = log.get_logger(__name__)
 
 import kvmagent

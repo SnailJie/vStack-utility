@@ -210,7 +210,8 @@ class HostPlugin(kvmagent.KvmAgent):
 
         self.heartbeat_timer = {}
         self.libvirt_version = self._get_libvirt_version()
-        self.qemu_version = self._get_qemu_version()
+        #self.qemu_version = self._get_qemu_version()
+        self.qemu_version='2.7.0'
         filepath = r'/etc/libvirt/qemu/networks/autostart/default.xml'
         if os.path.exists(filepath):
             os.unlink(filepath)

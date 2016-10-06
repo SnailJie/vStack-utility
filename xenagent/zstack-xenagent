@@ -14,9 +14,9 @@
 #
 
 check_status() {
-	pidfile='/var/run/zstack/kvmagent.pid'
+	pidfile='/var/run/zstack/xenagent.pid'
 	if [ ! -f $pidfile ]; then
-		echo "zstack kvm agent is stopped"
+		echo "zstack xen agent is stopped"
 		exit 1
 	else
 		pid=`cat $pidfile`
