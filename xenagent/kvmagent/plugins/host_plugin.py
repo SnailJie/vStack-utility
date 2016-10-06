@@ -206,7 +206,7 @@ class HostPlugin(kvmagent.KvmAgent):
         http_server.register_sync_uri(self.CAPACITY_PATH, self.capacity)
         http_server.register_sync_uri(self.ECHO_PATH, self.echo)
         http_server.register_async_uri(self.SETUP_MOUNTABLE_PRIMARY_STORAGE_HEARTBEAT, self.setup_heartbeat_file)
-        http_server.register_async_uri(self.FACT_PATH, self.fact)
+        #http_server.register_async_uri(self.FACT_PATH, self.fact)
 
         self.heartbeat_timer = {}
         self.libvirt_version = self._get_libvirt_version()
