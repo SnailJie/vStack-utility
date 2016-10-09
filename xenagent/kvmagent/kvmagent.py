@@ -48,7 +48,7 @@ def get_http_server():
 
 def get_qemu_path():
     global _qemu_path
-    _qemu_path = '/usr/bin/qemu-img-xen'
+    _qemu_path = '/usr/bin/qemu-system-x86_64'
     return _qemu_path
         
     

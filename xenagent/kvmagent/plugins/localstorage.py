@@ -392,8 +392,11 @@ class LocalStoragePlugin(kvmagent.KvmAgent):
             return jsonobject.dumps(rsp)
 
         dirname = os.path.dirname(cmd.installUrl)
+        logger.debug('--------------------------------------------CREATE_ROOT_VOLUME_PATH:%s' %  dirname)
+
         if not os.path.exists(dirname):
             os.makedirs(dirname, 0775)
+            logger.debug('--------------------------------------------CREATE_ROOT_VOLUME_PATH_OVER:%s' % dirname)
 
         linux.qcow2_clone(cmd.templatePathInCache, cmd.installUrl)
         rsp.totalCapacity, rsp.availableCapacity = self._get_disk_capacity()
