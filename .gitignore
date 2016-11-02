@@ -43,3 +43,4 @@ zstackbuild/scripts/setup.sh
 *.orig
 .pydevproject
 .project
+.settings

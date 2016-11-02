@@ -5,7 +5,7 @@
     <property name="xenagent.ansible.dir" location="${ansible.dir}/xen/" />
 
     <target name="build-xenagent" >
-        <makeDir dir="${kvmagent.bdir}" />
+        <makeDir dir="${xenagent.bdir}" />
 
         <checkProperty property="xenagent.source" />
         <checkProperty property="xenagent.serviceFile" />
@@ -21,7 +21,7 @@
         </exec>
 
         <!--
-        <copy todir="${kvmagent.bdir}">
+        <copy todir="${xenagent.bdir}">
             <fileset file="${kvmagent.source}/dist/*.egg" />
             <regexpmapper from="(.*).egg" to="zstack-kvmagent.egg"/>
         </copy>
