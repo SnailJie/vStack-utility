@@ -9,6 +9,8 @@
             <arg value="${sftpbackupstorage.ansible.dir}/*.tar.gz" />
             <arg value="${iscsi.ansible.dir}/*.tar.gz" />
             <arg value="${kvmagent.ansible.dir}/*.tar.gz" />
+            <arg value="${aliyunagent.ansible.dir}/*.tar.gz" />
+            <arg value="${xenagent.ansible.dir}/*.tar.gz" />
             <arg value="${consoleproxy.ansible.dir}/*.tar.gz" />
             <arg value="${appliancevm.ansible.dir}/*.tar.gz" />
             <arg value="${virtualrouter.ansible.dir}/*.tar.gz" />
