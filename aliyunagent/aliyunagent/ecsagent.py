@@ -62,7 +62,7 @@ def get_qemu_path():
         
     
 class AliyunRESTService(object):
-    http_server = http.HttpServer()
+    http_server = http.HttpServer(port=7072)
     http_server.logfile_path = log.get_logfile_path()
     
     NO_DAEMON = 'no_deamon'
@@ -103,7 +103,7 @@ class AgentCommand(object):
         pass
 
 def _build_url_for_test(paths):
-    builder = http.UriBuilder('http://localhost:7070')
+    builder = http.UriBuilder('http://localhost:7072')
     for p in paths:
         builder.add_path(p)
     return builder.build()
