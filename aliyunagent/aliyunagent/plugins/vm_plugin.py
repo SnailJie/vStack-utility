@@ -38,6 +38,22 @@ class NicTO(object):
         self.mac = None
         self.bridgeName = None
         self.deviceId = None
+        
+class SystemDiskTO(object):
+    def __init__(self):
+        self.category = None
+        self.disk_name = None
+        self.description = None
+        
+class DataDiskTO(object):
+    def __init__(self):
+        self.size = None
+        self.category = None
+        self.snapshot_id = None
+        self.disk_name = None
+        self.description = None
+        self.device = None
+        self.delete_with_instance = None
 
 class StartVmCmd(ecsagent.AgentCommand):
     def __init__(self):
@@ -565,6 +581,11 @@ class Vm(object):
     ECS_C2_LARGE = 10
     ECS_S1_MEDIUM = 11
     ECS_S2_XLARGE = 12
+    ECS_N1_TINY = 20
+    ECS_N1_SMALL = 21
+    ECS_N1_MEDIUM = 22
+    ECS_N1_LARGE = 23
+    ECS_N1_XLARGE = 24
     
     VM_SIZE_T1_XSMALL = "ecs.t1.xsmall"
     VM_SIZE_T1_SMALL = "ecs.t1.small"
@@ -579,6 +600,11 @@ class Vm(object):
     VM_SIZE_C2_LARGE = "ecs.c2.large"
     VM_SIZE_S1_MEDIUM = "ecs.s1.medium"
     VM_SIZE_S2_XLARGE = "ecs.s2.xlarge"
+    VM_SIZE_N1_TINY = "ecs.n1.tiny"
+    VM_SIZE_N1_SMALL = "ecs.n1.small"
+    VM_SIZE_N1_MEDIUM = "ecs.n1.medium"
+    VM_SIZE_N1_LARGE = "ecs.n1.large"
+    VM_SIZE_N1_XLARGE = "ecs.n1.xlarge"
     
     vm_size = {
         VM_SIZE_T1_XSMALL : ECS_T1_XSMALL,
@@ -594,6 +620,11 @@ class Vm(object):
         VM_SIZE_C2_LARGE : ECS_C2_LARGE,
         VM_SIZE_S1_MEDIUM : ECS_S1_MEDIUM,
         VM_SIZE_S2_XLARGE : ECS_S2_XLARGE,
+        VM_SIZE_N1_TINY : ECS_N1_TINY,
+        VM_SIZE_N1_SMALL : ECS_N1_SMALL,
+        VM_SIZE_N1_MEDIUM : ECS_N1_MEDIUM,
+        VM_SIZE_N1_LARGE : ECS_N1_LARGE,
+        VM_SIZE_N1_XLARGE : ECS_N1_XLARGE,
     }
     
     ECS_IMAGE_UBUNTU1404_64 = 0
@@ -835,8 +866,23 @@ class Vm(object):
             configuration['ex_security_group_id'] = cmd.ex_security_group_id
             
         def make_disks():
-            configuration['ex_data_disks'] = cmd.ex_data_disks
-            configuration['ex_system_disk'] = cmd.ex_system_disk
+            if cmd.ex_data_disks['size'] and cmd.ex_data_disks['category'] and cmd.ex_data_disks['device']:
+                configuration['ex_data_disks'] = [{ 'size':cmd.ex_data_disks['size'], \
+                                                   'category':cmd.ex_data_disks['category'], \
+                                                   'snapshot_id':cmd.ex_data_disks['snapshot_id'], \
+                                                   'disk_name':cmd.ex_data_disks['disk_name'], \
+                                                   'description':cmd.ex_data_disks['description'], \
+                                                   'device':cmd.ex_data_disks['device']}]
+                if cmd.ex_data_disks['category'] in ['cloud', 'cloud_efficiency', 'cloud_ssd']:
+                    configuration['ex_data_disks']['delete_with_instance'] = cmd.ex_data_disks['delete_with_instance']
+            else:
+                configuration['ex_data_disks'] = []
+            if cmd.ex_system_disk['category']:
+                configuration['ex_system_disk'] = {'category':cmd.ex_system_disk['category'], \
+                                                   'disk_name':cmd.ex_system_disk['disk_name'], \
+                                                   'description':cmd.ex_system_disk['description']}
+            else:
+                configuration['ex_system_disk'] = {}
             
         def make_internet_settings():
             configuration['ex_internet_charge_type'] = cmd.ex_internet_charge_type
