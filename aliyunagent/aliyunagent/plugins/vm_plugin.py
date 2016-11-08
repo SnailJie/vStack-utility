@@ -79,6 +79,11 @@ class StartVmCmd(ecsagent.AgentCommand):
 class StartVmResponse(ecsagent.AgentResponse):
     def __init__(self):
         super(StartVmResponse, self).__init__()
+        
+class StartVmPubResponse(ecsagent.AgentResponse):
+    def __init__(self):
+        super(StartVmPubResponse, self).__init__()
+        self.uuid = None
 
 class GetVncPortCmd(ecsagent.AgentCommand):
     def __init__(self):
@@ -791,6 +796,8 @@ class Vm(object):
 
         node = create_node()
         self.node = node
+        logger.debug(self.node)
+        return node.uuid
         
     def start(self):
         @AliyunAutoReconnect
@@ -866,7 +873,7 @@ class Vm(object):
             configuration['ex_security_group_id'] = cmd.ex_security_group_id
             
         def make_disks():
-            if cmd.ex_data_disks['size'] and cmd.ex_data_disks['category'] and cmd.ex_data_disks['device']:
+            if cmd.ex_data_disks and cmd.ex_data_disks['size'] and cmd.ex_data_disks['category'] and cmd.ex_data_disks['device']:
                 configuration['ex_data_disks'] = [{ 'size':cmd.ex_data_disks['size'], \
                                                    'category':cmd.ex_data_disks['category'], \
                                                    'snapshot_id':cmd.ex_data_disks['snapshot_id'], \
@@ -877,7 +884,7 @@ class Vm(object):
                     configuration['ex_data_disks']['delete_with_instance'] = cmd.ex_data_disks['delete_with_instance']
             else:
                 configuration['ex_data_disks'] = []
-            if cmd.ex_system_disk['category']:
+            if cmd.ex_system_disk and cmd.ex_system_disk['category']:
                 configuration['ex_system_disk'] = {'category':cmd.ex_system_disk['category'], \
                                                    'disk_name':cmd.ex_system_disk['disk_name'], \
                                                    'description':cmd.ex_system_disk['description']}
@@ -966,9 +973,10 @@ class VmPlugin(ecsagent.AliyunAgent):
                     raise ecsagent.AliyunError('vm[uuid:%s, name:%s] is already running' % (cmd.vmInstanceUuid, vm.get_name()))
                 else:
                     vm.start()
+                return vm.uuid
             else:
                 vm = Vm.from_StartVmCmd(cmd)
-                vm.create()
+                return vm.create()
         except LibcloudError as e:
             logger.warn(linux.get_exception_stacktrace())
             raise ecsagent.AliyunError('unable to start vm[uuid:%s, name:%s], libvirt error: %s' % (cmd.vmInstanceUuid, cmd.vmName, str(e)))
@@ -1024,13 +1032,13 @@ class VmPlugin(ecsagent.AliyunAgent):
     @ecsagent.replyerror
     def start_vm(self, req):
         cmd = jsonobject.loads(req[http.REQUEST_BODY])
-        rsp = StartVmResponse()
+        rsp = StartVmPubResponse()
         try:
             _init_aliyun_connection(cmd)
             
             self._record_operation(cmd.vmInstanceUuid, self.VM_OP_START)
 
-            self._start_vm(cmd)
+            rsp.uuid = self._start_vm(cmd)
             logger.debug('successfully started vm[uuid:%s, name:%s]' % (cmd.vmInstanceUuid, cmd.vmName))
         except ecsagent.AliyunError as e:
             logger.warn(linux.get_exception_stacktrace())
