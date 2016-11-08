@@ -866,7 +866,7 @@ class Vm(object):
             configuration['ex_security_group_id'] = cmd.ex_security_group_id
             
         def make_disks():
-            if cmd.ex_data_disks['size'] and cmd.ex_data_disks['category'] and cmd.ex_data_disks['device']:
+            if cmd.ex_data_disks and cmd.ex_data_disks['size'] and cmd.ex_data_disks['category'] and cmd.ex_data_disks['device']:
                 configuration['ex_data_disks'] = [{ 'size':cmd.ex_data_disks['size'], \
                                                    'category':cmd.ex_data_disks['category'], \
                                                    'snapshot_id':cmd.ex_data_disks['snapshot_id'], \
@@ -877,7 +877,7 @@ class Vm(object):
                     configuration['ex_data_disks']['delete_with_instance'] = cmd.ex_data_disks['delete_with_instance']
             else:
                 configuration['ex_data_disks'] = []
-            if cmd.ex_system_disk['category']:
+            if cmd.ex_system_disk and cmd.ex_system_disk['category']:
                 configuration['ex_system_disk'] = {'category':cmd.ex_system_disk['category'], \
                                                    'disk_name':cmd.ex_system_disk['disk_name'], \
                                                    'description':cmd.ex_system_disk['description']}
