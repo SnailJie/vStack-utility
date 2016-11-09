@@ -83,7 +83,7 @@ class StartVmResponse(ecsagent.AgentResponse):
 class StartVmPubResponse(ecsagent.AgentResponse):
     def __init__(self):
         super(StartVmPubResponse, self).__init__()
-        self.uuid = None
+        self.vmUuid = None
 
 class GetVncPortCmd(ecsagent.AgentCommand):
     def __init__(self):
@@ -797,7 +797,7 @@ class Vm(object):
         node = create_node()
         self.node = node
         logger.debug(self.node)
-        return node.uuid
+        return node.id
         
     def start(self):
         @AliyunAutoReconnect
@@ -1034,12 +1034,13 @@ class VmPlugin(ecsagent.AliyunAgent):
         cmd = jsonobject.loads(req[http.REQUEST_BODY])
         rsp = StartVmPubResponse()
         try:
+            logger.debug("start_vm++++++++++++++++++++")
             _init_aliyun_connection(cmd)
             
             self._record_operation(cmd.vmInstanceUuid, self.VM_OP_START)
 
-            rsp.uuid = self._start_vm(cmd)
-            logger.debug('successfully started vm[uuid:%s, name:%s]' % (cmd.vmInstanceUuid, cmd.vmName))
+            rsp.vmUuid = self._start_vm(cmd)
+            logger.debug('successfully started vm[uuid:%s, name:%s]' % (rsp.vmUuid, cmd.vmName))
         except ecsagent.AliyunError as e:
             logger.warn(linux.get_exception_stacktrace())
             rsp.error = str(e)
