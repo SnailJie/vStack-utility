@@ -1040,7 +1040,7 @@ class VmPlugin(ecsagent.AliyunAgent):
             self._record_operation(cmd.vmInstanceUuid, self.VM_OP_START)
 
             rsp.vmUuid = self._start_vm(cmd)
-            logger.debug('successfully started vm[uuid:%s, name:%s]' % (cmd.vmInstanceUuid, cmd.vmName))
+            logger.debug('successfully started vm[uuid:%s, name:%s]' % (rsp.vmUuid, cmd.vmName))
         except ecsagent.AliyunError as e:
             logger.warn(linux.get_exception_stacktrace())
             rsp.error = str(e)
