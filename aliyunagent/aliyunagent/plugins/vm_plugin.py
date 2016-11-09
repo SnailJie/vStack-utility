@@ -797,8 +797,6 @@ class Vm(object):
         node = create_node()
         self.node = node
         logger.debug(self.node)
-        for i,j in node.items():
-            logger.debug("key: %s, value: %s" %(i, j))
         return node.id
         
     def start(self):
