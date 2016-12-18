@@ -38,6 +38,22 @@ class NicTO(object):
         self.mac = None
         self.bridgeName = None
         self.deviceId = None
+        
+class SystemDiskTO(object):
+    def __init__(self):
+        self.category = None
+        self.disk_name = None
+        self.description = None
+        
+class DataDiskTO(object):
+    def __init__(self):
+        self.size = None
+        self.category = None
+        self.snapshot_id = None
+        self.disk_name = None
+        self.description = None
+        self.device = None
+        self.delete_with_instance = None
 
 class StartVmCmd(ecsagent.AgentCommand):
     def __init__(self):
@@ -63,6 +79,11 @@ class StartVmCmd(ecsagent.AgentCommand):
 class StartVmResponse(ecsagent.AgentResponse):
     def __init__(self):
         super(StartVmResponse, self).__init__()
+        
+class StartVmPubResponse(ecsagent.AgentResponse):
+    def __init__(self):
+        super(StartVmPubResponse, self).__init__()
+        self.vmUuid = None
 
 class GetVncPortCmd(ecsagent.AgentCommand):
     def __init__(self):
@@ -94,6 +115,12 @@ class RebootVmCmd(ecsagent.AgentCommand):
 class RebootVmResponse(ecsagent.AgentResponse):
     def __init__(self):
         super(RebootVmResponse, self).__init__()
+        
+        
+class GetPubVmResponse(ecsagent.AgentResponse):
+    def __init__(self):
+        super(GetPubVmResponse, self).__init__()
+        self.nodes = None
 
 class DestroyVmCmd(ecsagent.AgentCommand):
     def __init__(self):
@@ -433,6 +460,25 @@ def get_vm_by_uuid(uuid, exception_if_not_existing=True):
     except LibcloudError as e:
         raise ecsagent.AliyunError('unable to find node[uuid:%s]' % uuid)
 
+
+def get_vms(exception_if_not_existing=True):
+    try:
+        # libvirt may not be able to find a VM when under a heavy workload, we re-try here
+        @AliyunAutoReconnect
+        def call_aliyun(conn):
+            nodes = conn.list_nodes()
+            return nodes
+
+        @linux.retry(times=3, sleep_time=1)
+        def retry_call_aliyun():
+            return call_aliyun()
+
+        vm = Vm.from_virt_domain(retry_call_aliyun())
+        return vm
+    except LibcloudError as e:
+        raise ecsagent.AliyunError('unable get list of VMs')
+
+
 def get_running_vm_uuids():
     @AliyunAutoReconnect
     def call_libvirt(conn):
@@ -565,6 +611,11 @@ class Vm(object):
     ECS_C2_LARGE = 10
     ECS_S1_MEDIUM = 11
     ECS_S2_XLARGE = 12
+    ECS_N1_TINY = 20
+    ECS_N1_SMALL = 21
+    ECS_N1_MEDIUM = 22
+    ECS_N1_LARGE = 23
+    ECS_N1_XLARGE = 24
     
     VM_SIZE_T1_XSMALL = "ecs.t1.xsmall"
     VM_SIZE_T1_SMALL = "ecs.t1.small"
@@ -579,6 +630,11 @@ class Vm(object):
     VM_SIZE_C2_LARGE = "ecs.c2.large"
     VM_SIZE_S1_MEDIUM = "ecs.s1.medium"
     VM_SIZE_S2_XLARGE = "ecs.s2.xlarge"
+    VM_SIZE_N1_TINY = "ecs.n1.tiny"
+    VM_SIZE_N1_SMALL = "ecs.n1.small"
+    VM_SIZE_N1_MEDIUM = "ecs.n1.medium"
+    VM_SIZE_N1_LARGE = "ecs.n1.large"
+    VM_SIZE_N1_XLARGE = "ecs.n1.xlarge"
     
     vm_size = {
         VM_SIZE_T1_XSMALL : ECS_T1_XSMALL,
@@ -594,6 +650,11 @@ class Vm(object):
         VM_SIZE_C2_LARGE : ECS_C2_LARGE,
         VM_SIZE_S1_MEDIUM : ECS_S1_MEDIUM,
         VM_SIZE_S2_XLARGE : ECS_S2_XLARGE,
+        VM_SIZE_N1_TINY : ECS_N1_TINY,
+        VM_SIZE_N1_SMALL : ECS_N1_SMALL,
+        VM_SIZE_N1_MEDIUM : ECS_N1_MEDIUM,
+        VM_SIZE_N1_LARGE : ECS_N1_LARGE,
+        VM_SIZE_N1_XLARGE : ECS_N1_XLARGE,
     }
     
     ECS_IMAGE_UBUNTU1404_64 = 0
@@ -760,6 +821,8 @@ class Vm(object):
 
         node = create_node()
         self.node = node
+        logger.debug(self.node)
+        return node.id
         
     def start(self):
         @AliyunAutoReconnect
@@ -835,8 +898,23 @@ class Vm(object):
             configuration['ex_security_group_id'] = cmd.ex_security_group_id
             
         def make_disks():
-            configuration['ex_data_disks'] = cmd.ex_data_disks
-            configuration['ex_system_disk'] = cmd.ex_system_disk
+            if cmd.ex_data_disks and cmd.ex_data_disks['size'] and cmd.ex_data_disks['category'] and cmd.ex_data_disks['device']:
+                configuration['ex_data_disks'] = [{ 'size':cmd.ex_data_disks['size'], \
+                                                   'category':cmd.ex_data_disks['category'], \
+                                                   'snapshot_id':cmd.ex_data_disks['snapshot_id'], \
+                                                   'disk_name':cmd.ex_data_disks['disk_name'], \
+                                                   'description':cmd.ex_data_disks['description'], \
+                                                   'device':cmd.ex_data_disks['device']}]
+                if cmd.ex_data_disks['category'] in ['cloud', 'cloud_efficiency', 'cloud_ssd']:
+                    configuration['ex_data_disks']['delete_with_instance'] = cmd.ex_data_disks['delete_with_instance']
+            else:
+                configuration['ex_data_disks'] = []
+            if cmd.ex_system_disk and cmd.ex_system_disk['category']:
+                configuration['ex_system_disk'] = {'category':cmd.ex_system_disk['category'], \
+                                                   'disk_name':cmd.ex_system_disk['disk_name'], \
+                                                   'description':cmd.ex_system_disk['description']}
+            else:
+                configuration['ex_system_disk'] = {}
             
         def make_internet_settings():
             configuration['ex_internet_charge_type'] = cmd.ex_internet_charge_type
@@ -867,6 +945,7 @@ class Vm(object):
 
 class VmPlugin(ecsagent.AliyunAgent):
     ALIYUN_START_VM_PATH = "/aliyun/vm/start"
+    ALIYUN_GET_LIST_VM_PATH = "/aliyun/vm/getListPubVm"
     ALIYUN_STOP_VM_PATH = "/aliyun/vm/stop"
     ALIYUN_REBOOT_VM_PATH = "/aliyun/vm/reboot"
     ALIYUN_DESTROY_VM_PATH = "/aliyun/vm/destroy"
@@ -920,9 +999,10 @@ class VmPlugin(ecsagent.AliyunAgent):
                     raise ecsagent.AliyunError('vm[uuid:%s, name:%s] is already running' % (cmd.vmInstanceUuid, vm.get_name()))
                 else:
                     vm.start()
+                return vm.uuid
             else:
                 vm = Vm.from_StartVmCmd(cmd)
-                vm.create()
+                return vm.create()
         except LibcloudError as e:
             logger.warn(linux.get_exception_stacktrace())
             raise ecsagent.AliyunError('unable to start vm[uuid:%s, name:%s], libvirt error: %s' % (cmd.vmInstanceUuid, cmd.vmName, str(e)))
@@ -978,14 +1058,15 @@ class VmPlugin(ecsagent.AliyunAgent):
     @ecsagent.replyerror
     def start_vm(self, req):
         cmd = jsonobject.loads(req[http.REQUEST_BODY])
-        rsp = StartVmResponse()
+        rsp = StartVmPubResponse()
         try:
+            logger.debug("start_vm++++++++++++++++++++")
             _init_aliyun_connection(cmd)
             
             self._record_operation(cmd.vmInstanceUuid, self.VM_OP_START)
 
-            self._start_vm(cmd)
-            logger.debug('successfully started vm[uuid:%s, name:%s]' % (cmd.vmInstanceUuid, cmd.vmName))
+            rsp.vmUuid = self._start_vm(cmd)
+            logger.debug('successfully started vm[uuid:%s, name:%s]' % (rsp.vmUuid, cmd.vmName))
         except ecsagent.AliyunError as e:
             logger.warn(linux.get_exception_stacktrace())
             rsp.error = str(e)
@@ -1053,7 +1134,7 @@ class VmPlugin(ecsagent.AliyunAgent):
 
     def _stop_vm(self, cmd):
         try:
-            vm = get_vm_by_uuid(cmd.uuid)
+            vm = get_vm_by_uuid(cmd.vmUuid)
         except ecsagent.AliyunError as e:
             logger.debug(linux.get_exception_stacktrace())
             logger.debug('however, the stop operation is still considered as success')
@@ -1082,11 +1163,30 @@ class VmPlugin(ecsagent.AliyunAgent):
         cmd = jsonobject.loads(req[http.REQUEST_BODY])
         rsp = RebootVmResponse()
         try:
-            self._record_operation(cmd.uuid, self.VM_OP_REBOOT)
+            self._record_operation(cmd.vmUuid, self.VM_OP_REBOOT)
 
-            vm = get_vm_by_uuid(cmd.uuid)
+            vm = get_vm_by_uuid(cmd.vmUuid)
             vm.reboot(force_stop=cmd.force)
-            logger.debug('successfully, reboot vm[uuid:%s]' % cmd.uuid)
+            logger.debug('successfully, reboot vm[uuid:%s]' % cmd.vmUuid)
+        except ecsagent.AliyunError as e:
+            logger.warn(linux.get_exception_stacktrace())
+            rsp.error = str(e)
+            rsp.success = False
+
+        return jsonobject.dumps(rsp)
+    
+    
+    
+    @ecsagent.replyerror
+    def getPubList_vm(self, req):
+        cmd = jsonobject.loads(req[http.REQUEST_BODY])
+        rsp = GetPubVmResponse()
+        try:
+            self._record_operation(cmd.vmUuid, self.VM_OP_REBOOT)
+
+            vms = get_vms(exception_if_not_existing)
+            rsp.nodes = vms;
+            logger.debug('successfully get lists %s' % vms)
         except ecsagent.AliyunError as e:
             logger.warn(linux.get_exception_stacktrace())
             rsp.error = str(e)
@@ -1099,9 +1199,9 @@ class VmPlugin(ecsagent.AliyunAgent):
         cmd = jsonobject.loads(req[http.REQUEST_BODY])
         rsp = DestroyVmResponse()
         try:
-            self._record_operation(cmd.uuid, self.VM_OP_DESTROY)
+            self._record_operation(cmd.vmUuid, self.VM_OP_DESTROY)
 
-            vm = get_vm_by_uuid(cmd.uuid, False)
+            vm = get_vm_by_uuid(cmd.vmUuid, False)
             if vm:
                 vm.destroy()
                 logger.debug('successfully destroyed vm[uuid:%s]' % cmd.uuid)
@@ -1280,6 +1380,7 @@ class VmPlugin(ecsagent.AliyunAgent):
         http_server = ecsagent.get_http_server()
 
         http_server.register_async_uri(self.ALIYUN_START_VM_PATH, self.start_vm)
+        http_server.register_async_uri(self.ALIYUN_GET_LIST_VM_PATH, self.start_vm)
         http_server.register_async_uri(self.ALIYUN_STOP_VM_PATH, self.stop_vm)
         http_server.register_async_uri(self.ALIYUN_REBOOT_VM_PATH, self.reboot_vm)
         http_server.register_async_uri(self.ALIYUN_DESTROY_VM_PATH, self.destroy_vm)

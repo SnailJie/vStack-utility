@@ -7,7 +7,7 @@ setup(name='aliyunagent',
       version=version,
       description="ZStack aliyun agent REST service",
       long_description="""\
-ZStack ECS agent REST service""",
+ZStack KVM agent REST service""",
       classifiers=[], # Get strings from http://pypi.python.org/pypi?%3Aaction=list_classifiers
       keywords='zstack kvm python agent REST',
       author='Frank Zhang',
