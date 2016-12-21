@@ -26,7 +26,7 @@ remote_port = None
 enabled_nested_flag = False
 
 # get parameter from shell
-parser = argparse.ArgumentParser(description='Deploy kvm to host')
+parser = argparse.ArgumentParser(description='Deploy ECS to host')
 parser.add_argument('-i', type=str, help="""specify inventory host file
                         default=/etc/ansible/hosts""")
 parser.add_argument('--private-key', type=str, help='use this file to authenticate the connection')

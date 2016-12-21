@@ -28,6 +28,7 @@ import traceback
 import Queue
 import sys
 import time
+from gtk._gtk import Item
 
 logger = log.get_logger(__name__)
 
@@ -460,6 +461,8 @@ def get_vm_by_uuid(uuid, exception_if_not_existing=True):
     except LibcloudError as e:
         raise ecsagent.AliyunError('unable to find node[uuid:%s]' % uuid)
 
+ 
+
 
 def get_vms(exception_if_not_existing=True):
     try:
@@ -473,8 +476,14 @@ def get_vms(exception_if_not_existing=True):
         def retry_call_aliyun():
             return call_aliyun()
 
-        vm = Vm.from_virt_domain(retry_call_aliyun())
-        return vm
+        vms = retry_call_aliyun();
+        restlts = [];
+        if (len(vms)>0):
+            for tmp in vms :
+                vm = Vm.from_virt_domain_withoutNode(tmp);
+                restlts.append(vm.__dict__);
+        
+        return restlts
     except LibcloudError as e:
         raise ecsagent.AliyunError('unable get list of VMs')
 
@@ -503,6 +512,8 @@ def get_all_vm_states():
     for r in running:
         ret[r] = Vm.VM_STATE_RUNNING
     return ret
+
+#GOOD
 
 def get_running_vms():
     @AliyunAutoReconnect
@@ -821,7 +832,9 @@ class Vm(object):
 
         node = create_node()
         self.node = node
-        logger.debug(self.node)
+        logger.debug('-----------------create log!!!! %s' % self.node)
+        logger.debug('-----------------create log return %s' % node.id)
+        logger.debug('-----------------create log UUID %s' % node.uuid)
         return node.id
         
     def start(self):
@@ -858,6 +871,17 @@ class Vm(object):
         vm.driver = domain.driver
         vm.uuid = domain.uuid
         vm.node = domain
+
+        return vm
+    
+    @staticmethod
+    def from_virt_domain_withoutNode(domain):
+        vm = Vm()
+        vm.name = domain.name
+        vm.state = domain.state
+        vm.public_ips = domain.public_ips
+        vm.private_ips = domain.private_ips
+        vm.id = domain.id
 
         return vm
 
@@ -1183,16 +1207,16 @@ class VmPlugin(ecsagent.AliyunAgent):
         rsp = GetPubVmResponse()
         try:
             self._record_operation(cmd.vmUuid, self.VM_OP_REBOOT)
-
-            vms = get_vms(exception_if_not_existing)
+            vms = get_vms()
             rsp.nodes = vms;
             logger.debug('successfully get lists %s' % vms)
         except ecsagent.AliyunError as e:
             logger.warn(linux.get_exception_stacktrace())
             rsp.error = str(e)
             rsp.success = False
-
-        return jsonobject.dumps(rsp)
+        result = jsonobject.dumps(rsp)  
+        logger.debug('--------return  pub lists %s' % result) 
+        return result
 
     @ecsagent.replyerror
     def destroy_vm(self, req):
@@ -1380,7 +1404,7 @@ class VmPlugin(ecsagent.AliyunAgent):
         http_server = ecsagent.get_http_server()
 
         http_server.register_async_uri(self.ALIYUN_START_VM_PATH, self.start_vm)
-        http_server.register_async_uri(self.ALIYUN_GET_LIST_VM_PATH, self.start_vm)
+        http_server.register_async_uri(self.ALIYUN_GET_LIST_VM_PATH, self.getPubList_vm)
         http_server.register_async_uri(self.ALIYUN_STOP_VM_PATH, self.stop_vm)
         http_server.register_async_uri(self.ALIYUN_REBOOT_VM_PATH, self.reboot_vm)
         http_server.register_async_uri(self.ALIYUN_DESTROY_VM_PATH, self.destroy_vm)
