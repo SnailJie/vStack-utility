@@ -28,7 +28,7 @@ import traceback
 import Queue
 import sys
 import time
-from gtk._gtk import Item
+# from gtk._gtk import Item
 
 logger = log.get_logger(__name__)
 
