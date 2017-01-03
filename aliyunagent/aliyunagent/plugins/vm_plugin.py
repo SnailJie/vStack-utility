@@ -832,9 +832,6 @@ class Vm(object):
 
         node = create_node()
         self.node = node
-        logger.debug('-----------------create log!!!! %s' % self.node)
-        logger.debug('-----------------create log return %s' % node.id)
-        logger.debug('-----------------create log UUID %s' % node.uuid)
         return node.id
         
     def start(self):
